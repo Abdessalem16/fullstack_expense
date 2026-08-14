@@ -9,3 +9,20 @@ Content-Type: application/json
 GET  http://localhost:8000/api/transactions/
 ###
 DELETE http://localhost:8000/api/transactions/447a6318-2366-4810-9038-9f983dc13bb8/
+
+###
+PUT http://localhost:8000/api/transactions/9699a559-6127-4750-9541-5ea0a7746786/
+Content-Type: application/json
+
+{
+    "text": "Salaire févirer",
+    "amount":5000.00
+}
+
+###
+PATCH http://localhost:8000/api/transactions/9699a559-6127-4750-9541-5ea0a7746786/
+Content-Type: application/json
+
+{
+    "amount":58200.00
+}

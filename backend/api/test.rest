@@ -1,8 +1,11 @@
-POST http://localhost:8000/transactions/
+POST http://localhost:8000/api/transactions/
 Content-Type: application/json
 
-
 {
-    "text": "Salaire Aout",
-    "amount":2000.00
+    "text": "Salaire Juin",
+    "amount":-2000.00
 }
+###
+GET  http://localhost:8000/api/transactions/
+###
+DELETE http://localhost:8000/api/transactions/447a6318-2366-4810-9038-9f983dc13bb8/

@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import api from "./api";
 import toast from "react-hot-toast";
-import { Wallet } from "lucide-react";
+import { Activity, ArrowDownCircle, ArrowUpCircle, PlusCircle, Trash, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
 type Transaction = {
   id:string;
@@ -14,6 +14,10 @@ type Transaction = {
 }
 export default function Home() {
   const [transactions,setTransactions]=useState<Transaction[]>([])
+  const [text, setText]=useState<string>("");
+  const [amount, setAmount]=useState<number | "">("");
+  const [loading, setLoading]=useState(false)
+  
   const getTransactions = async ()=>{
     try{
       const res = await api.get<Transaction[]>("transactions/")
@@ -26,6 +30,61 @@ export default function Home() {
     console.log("API URL =", process.env.NEXT_PUBLIC_API_URL)
     }
   }
+    const deleteTransaction = async (id : string)=>{
+    try{
+      await api.delete(`transactions/${id}/`)
+      getTransactions()
+      toast.success("Transaction supprimée avec succès ")
+    
+    }catch (error){
+    console.error("Erreur suppression transactions",error)
+    toast.error("Erreur suppression transation")
+    }
+  }
+
+
+ const addTransaction = async () => {
+  if (text.trim() === "" || amount === "" || isNaN(Number(amount))) {
+    toast.error("Merci de remplir le texte et le montant");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const res = await api.post<Transaction>("transactions/", {
+      text: text.trim(),
+      amount: Number(amount),
+    });
+
+    console.log("Transaction ajoutée :", res.data);
+
+    setTransactions((prev) => [...prev, res.data]);
+
+    setText("");
+    setAmount("");
+
+    const modal = document.getElementById(
+      "my_modal_3"
+    ) as HTMLDialogElement | null;
+
+    modal?.close();
+
+    toast.success("Transaction ajoutée avec succès");
+  } catch (error: any) {
+    console.error("Erreur ajout transaction :", error);
+    console.error("Réponse API :", error.response?.data);
+
+    toast.error(
+      error.response?.data
+        ? JSON.stringify(error.response.data)
+        : "Erreur lors de l'ajout"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
    useEffect(()=>{
     getTransactions()
    },[]);
@@ -49,19 +108,169 @@ export default function Home() {
   return (
   <div  className="w-2/3 flex flex-col gap-4">
     <div className="flex justify-between rounded-2xl border-2 border-warning/10
-    border-dashed bg-warning/5 p-5">
+    border-dashed bg-black/5 p-5">
       <div className="flex flex-col gap-1">
        <div className ="badge badge-soft">
-  <Wallet className="w-4 h4" />
-  votre solde
-</div>
-      </div>
-      <div className="stat-value">
+        <Wallet className="w-4 h4" />
+           votre solde
+           </div>
+            <div className="stat-value">
         {balance.toFixed(2)}DT
 
       </div>
+      </div>
+      <div className="flex flex-col gap-1">
+       <div className ="badge badge-soft badge-success">
+        <ArrowUpCircle className="w-4 h4" />
+           Revenus
+           </div>
+            <div className="stat-value">
+        {income.toFixed(2)}DT
 
+      </div>
+      </div>
+      <div className="flex flex-col gap-1">
+       <div className ="badge badge-soft badge-error">
+        <ArrowDownCircle className="w-4 h4" />
+           Dépenses
+           </div>
+            <div className="stat-value">
+        {expense.toFixed(2)}DT
+      </div>
+      </div>
+      
+      
+      
+      
+     
     </div>
+
+  <div className="flex justify-between rounded-2xl border-2 border-warning/10
+    border-dashed bg-black/10 p-10">
+      <div className="flex justify-between items-center mb-1">
+        
+          <div className="badge badge-soft badge-wining gap-1">
+            <Activity className="w-4 h-4"/>
+            Dépenses vs Revenus
+          </div>
+          <div> {ratio.toFixed(0)} %</div>
+        </div>
+   
+  <progress
+  className="progress progress-success w-full"
+   value={ratio}
+   max={100}  
+  >
+  </progress>
+  </div>
+
+    
+
+    {/* You can open the modal using document.getElementById('ID').showModal() method */}
+<button className="btn btn-warning" 
+onClick={()=>(document.getElementById('my_modal_3') as HTMLDialogElement).showModal()}>
+  <PlusCircle className="w-4 h-4"/>
+  Ajouter une transaction
+  </button>
+
+
+  <div className="flex justify-between rounded-2xl border-2 border-warning/10
+    border-dashed bg-black/10 ">
+  <table className="table">
+    {/* head */}
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Description</th>
+        <th>Montant</th>
+        <th>Date</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      {transactions.map((t ,index )=>(
+        <tr
+        key ={t.id}
+        
+        >
+        <th>{index + 1}</th>
+        <td>{t.text}</td>
+        <td className="font-semibold flex items-center gap-2">
+          {t.amount > 0 ? (
+          <TrendingUp className="text-success w-6 h-6"/>
+
+          ):(
+            <TrendingDown className="text-error w-6 h-6"/>
+          )}
+
+          {t.amount > 0 ? `+${t.amount}`:`${t.amount}`}
+        </td>
+        <td>
+          {formatDate(t.created_at)}
+        </td>
+        <td>
+         <button 
+         
+         onClick={() => deleteTransaction(t.id)}
+         className="btn btn-sm btn-error btn-soft"
+         title="Supprimer">  
+          <Trash className="w-4 h-4"/>
+         </button>
+        </td>
+      </tr>
+      ))}
+
+      </tbody>  
+   </table>
+  </div>
+
+
+<dialog id="my_modal_3" className="modal backdrop-blur">
+  <div className="modal-box border-2 border-warning/10 border-dashed">
+    <form method="dialog">
+      {/* if there is a button in form, it will close the modal */}
+      <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
+    <h3 className="font-bold text-lg">Ajouter une transaction</h3>
+    <div className="flex flex-col gap-4 mt-4">
+     <div className="flex flex-col gap-2" >
+      <label className="label"> texte </label>
+      <input
+        type="text" 
+        name="text"
+        value={text} 
+        onChange={(e)=>setText(e.target.value)}
+        placeholder="Entrez le texte..."
+        className="input w-full"
+       />
+     </div>
+     <div className="flex flex-col gap-2" >
+      <label className="label"> Montant (négatif- dépense, positif -revenu) </label>
+      <input
+        type="number" 
+        name="amount"
+        value={amount} 
+        onChange={(e)=>setAmount(
+          e.target.value === "" ? "": Number(e.target.value)
+        )}
+        placeholder="Entrez le montant"
+        className="input w-full"
+       />
+     </div>
+     <button
+  type="button"
+  className="w-full btn btn-warning"
+  onClick={addTransaction}
+  disabled={loading}
+>
+  <PlusCircle className="w-4 h-4" />
+  {loading ? "Ajout..." : "Ajouter"}
+</button>
+    </div>
+    
+  </div>
+</dialog>
 
   </div>
   );
